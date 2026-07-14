@@ -104,6 +104,30 @@
   .preview-wrap { max-height: 260px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-top: 12px; }
   .preview-summary { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .preview-chip { padding: 6px 14px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+
+  /* Responsive Design Adjustments */
+  @media (max-width: 768px) {
+    .app-header { flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 16px; }
+    .app-header h1 { font-size: 1.2rem; }
+    .app-header span { justify-content: center; flex-wrap: wrap; margin-left: 0 !important; width: 100%; gap: 8px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .filter-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .modal { padding: 20px 16px; width: 95%; }
+    #districtTabs { flex-wrap: wrap; }
+    #birthdayCard .card-title { font-size: 1.1rem !important; flex-direction: column; align-items: flex-start; gap: 8px; }
+    #birthdayCard .card-title span:first-child { font-size: 0.8rem !important; margin-left: 0 !important; display: block; margin-top: 4px; }
+    .toast { max-width: calc(100vw - 32px); bottom: 16px; right: 16px; font-size: 0.8rem; }
+    .stat-number { font-size: 1.5rem; }
+    .top-bar { flex-direction: column; align-items: flex-start; }
+    .top-bar > div:last-child { display: flex; flex-direction: column; width: 100%; gap: 8px; }
+    .top-bar > div:last-child > button { width: 100%; justify-content: center; }
+    .tab-bar { flex-wrap: wrap; }
+    #loginOverlay > div { width: 90% !important; padding: 24px !important; }
+  }
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
