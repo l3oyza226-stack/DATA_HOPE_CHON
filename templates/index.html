@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Hope Chon v1</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; background: #f0f4f8; color: #2d3748; min-height: 100vh; }
+  .app-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 32px;
+    display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+  .app-header h1 { font-size: 1.4rem; font-weight: 700; }
+  .app-header span { font-size: 1.8rem; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
+
+  .card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .card-title { font-size: 1rem; font-weight: 700; color: #4a5568; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  .filter-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; align-items: end; }
+  @media (max-width: 768px) { .filter-grid { grid-template-columns: 1fr 1fr; } }
+
+  label { font-size: 0.8rem; color: #718096; margin-bottom: 4px; display: block; }
+  input, select, textarea {
+    width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 10px;
+    font-size: 0.9rem; font-family: inherit; transition: border-color 0.2s; background: white;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #667eea; }
+
+  .btn { padding: 10px 20px; border: none; border-radius: 10px; font-size: 0.9rem; font-family: inherit;
+    font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .btn-primary { background: #667eea; color: white; }
+  .btn-primary:hover { background: #5a67d8; transform: translateY(-1px); }
+  .btn-success { background: #48bb78; color: white; }
+  .btn-success:hover { background: #38a169; }
+  .btn-danger  { background: #fc8181; color: white; }
+  .btn-danger:hover  { background: #e53e3e; }
+  .btn-warning { background: #f6ad55; color: white; }
+  .btn-warning:hover { background: #ed8936; }
+  .btn-outline { background: white; color: #667eea; border: 2px solid #667eea; }
+  .btn-outline:hover { background: #f0f0ff; }
+  .btn-outline.active { background: #667eea; color: white; }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 8px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card { background: white; border-radius: 14px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 4px solid; }
+  .stat-card:nth-child(1) { border-color: #667eea; }
+  .stat-card:nth-child(2) { border-color: #48bb78; }
+  .stat-card:nth-child(3) { border-color: #f6ad55; }
+  .stat-card:nth-child(4) { border-color: #fc8181; }
+  .stat-number { font-size: 2rem; font-weight: 800; color: #2d3748; }
+  .stat-label  { font-size: 0.78rem; color: #a0aec0; margin-top: 2px; }
+
+  .table-wrap { overflow-x: auto; }
+  .top-scroll { overflow-x: auto; overflow-y: hidden; height: 16px; margin-bottom: 4px; }
+  .top-scroll div { height: 1px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th { background: #f7fafc; color: #4a5568; font-weight: 700; padding: 10px 12px; text-align: left; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid #f0f4f8; transition: background 0.15s; }
+  tbody tr:hover { background: #f7fafc; }
+  tbody td { padding: 9px 12px; white-space: nowrap; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+  .badge-green  { background: #c6f6d5; color: #276749; }
+  .badge-blue   { background: #bee3f8; color: #2c5282; }
+  .badge-orange { background: #feebc8; color: #7b341e; }
+  .badge-gray   { background: #edf2f7; color: #4a5568; }
+  .badge-new    { background: #c6f6d5; color: #276749; }
+  .badge-update { background: #feebc8; color: #7b341e; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100;
+    align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: white; border-radius: 20px; padding: 28px; width: 100%; max-width: 640px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: slideUp 0.25s ease; max-height: 90vh; overflow-y: auto; }
+  .modal.modal-wide { max-width: 820px; }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: #2d3748; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  .loading { text-align: center; padding: 48px; color: #a0aec0; font-size: 0.9rem; }
+  .spinner { width: 36px; height: 36px; border: 4px solid #e2e8f0; border-top-color: #667eea; border-radius: 50%;
+    animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #2d3748; color: white; padding: 12px 20px;
+    border-radius: 12px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    transform: translateY(80px); transition: transform 0.3s; z-index: 200; display: flex; align-items: center; gap: 8px;
+    max-width: 420px; white-space: pre-wrap; line-height: 1.5; }
+  .toast.show { transform: translateY(0); }
+  .toast.success { background: #48bb78; }
+  .toast.error   { background: #fc8181; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .result-count { font-size: 0.82rem; color: #a0aec0; }
+
+  .tab-bar { display: flex; gap: 8px; margin-bottom: 18px; }
+  .import-hint { font-size: 0.8rem; color: #a0aec0; margin-top: 6px; line-height: 1.5; }
+  .preview-wrap { max-height: 260px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-top: 12px; }
+  .preview-summary { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .preview-chip { padding: 6px 14px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- ====== Login Screen ====== -->
+<div id="loginOverlay" style="position:fixed;inset:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px">
+  <div style="background:white;border-radius:20px;padding:36px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div><img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" style="max-height: 100px; mix-blend-mode: multiply;"></div>
+      <div style="font-size:1.1rem;font-weight:700;color:#2d3748;margin-top:8px">Data Hope Chon v1</div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Username</label>
+      <input type="text" id="loginUsername" placeholder="ชื่อผู้ใช้" onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
+    </div>
+    <div class="form-group" style="margin-bottom:8px">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="loginError" style="color:#e53e3e;font-size:0.82rem;min-height:18px;margin-bottom:8px"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="doLogin()" id="loginBtn">เข้าสู่ระบบ</button>
+    <div style="text-align:center;margin-top:14px;font-size:0.85rem;color:#718096">
+      ยังไม่มีบัญชี? <a href="#" onclick="showRegisterForm();return false;" style="color:#667eea;font-weight:700">สมัครสมาชิก</a>
+    </div>
+  </div>
+
+  <!-- Register form (hidden by default) -->
+  <div id="registerCard" style="display:none;background:white;border-radius:20px;padding:36px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:2.5rem">📝</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#2d3748;margin-top:8px">สมัครสมาชิกใหม่</div>
+      <div style="font-size:0.78rem;color:#a0aec0;margin-top:4px">สมัครแล้วต้องรอผู้ดูแลระบบอนุมัติก่อนใช้งาน</div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>ชื่อ-สกุล (สำหรับแสดงผล)</label>
+      <input type="text" id="regDisplayName" placeholder="เช่น สมชาย ใจดี">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Username</label>
+      <input type="text" id="regUsername" placeholder="อย่างน้อย 3 ตัวอักษร">
+    </div>
+    <div class="form-group" style="margin-bottom:8px">
+      <label>Password</label>
+      <input type="password" id="regPassword" placeholder="อย่างน้อย 4 ตัวอักษร">
+    </div>
+    <div id="registerMsg" style="font-size:0.82rem;min-height:18px;margin-bottom:8px"></div>
+    <button class="btn btn-success" style="width:100%;justify-content:center;padding:12px" onclick="doRegister()" id="registerBtn">สมัครสมาชิก</button>
+    <div style="text-align:center;margin-top:14px;font-size:0.85rem;color:#718096">
+      มีบัญชีอยู่แล้ว? <a href="#" onclick="showLoginForm();return false;" style="color:#667eea;font-weight:700">เข้าสู่ระบบ</a>
+    </div>
+  </div>
+</div>
+
+<header class="app-header">
+  <div onclick="location.reload()" style="cursor:pointer; display:flex; align-items:center;" title="กลับหน้าแรก">
+    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" style="height: 32px; margin-right: 8px; mix-blend-mode: multiply;">
+    <h1>Data Hope Chon v1</h1>
+  </div>
+  <span style="margin-left:auto;font-size:0.85rem;font-weight:400;display:flex;align-items:center;gap:12px">
+    <span id="loggedInUser"></span>
+    <button class="btn btn-sm" id="manageUsersBtn" style="background:rgba(255,255,255,0.2);color:white;display:none" onclick="openUsersModal()">👥 จัดการผู้ใช้</button>
+    <button class="btn btn-sm" id="viewLogsBtn" style="background:rgba(255,255,255,0.2);color:white;display:none" onclick="openLogsModal()">📜 ประวัติการแก้ไข</button>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white" onclick="openChangePasswordModal()">🔑 เปลี่ยนรหัส</button>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white" onclick="doLogout()">ออกจากระบบ</button>
+  </span>
+  <span style="font-size:0.65rem;opacity:0.6;font-weight:400">v2026-07-07-02</span>
+</header>
+
+<div class="container" style="padding-bottom:0">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 8px;">
+    <div class="tab-bar" id="districtTabs" style="margin-bottom:0"></div>
+    <a href="https://member-system-hopev1.vercel.app/" target="_blank" class="btn btn-primary" style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3); border-radius: 999px; padding: 10px 24px; font-size: 0.95rem; text-decoration: none;">
+      📊 ระบบจัดการสมาชิก(สถิติ)
+    </a>
+  </div>
+</div>
+
+<div class="container" style="padding-top:16px">
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-number" id="statTotal">-</div><div class="stat-label">รายการทั้งหมด</div></div>
+    <div class="stat-card"><div class="stat-number" id="statUnits">-</div><div class="stat-label">หน่วยทั้งหมด</div></div>
+    <div class="stat-card"><div class="stat-number" id="statCare">-</div><div class="stat-label">แคร์ทั้งหมด</div></div>
+    <div class="stat-card"><div class="stat-number" id="statFiltered">-</div><div class="stat-label">ผลลัพธ์ปัจจุบัน</div></div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; margin-bottom: 20px;">
+<!-- ====== Birthday Notifications ====== -->
+  <div class="card" id="birthdayCard" style="display:none;border-left:4px solid #f6ad55; margin-bottom: 0;">
+    <div class="card-title" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onclick="toggleBirthdayCard()">
+      <div style="font-size:1.3rem; font-weight:bold;">
+        🎂 วันเกิดสมาชิกที่กำลังจะถึง (7 วันข้างหน้า) 
+        <span style="font-size:0.9rem; font-weight:normal; color:#a0aec0; text-decoration:underline; margin-left:12px;" onclick="event.stopPropagation(); document.getElementById('birthdayModalOverlay').classList.add('active')">(คลิกเพื่อดูจอใหญ่)</span>
+      </div>
+      <span id="birthdayToggleIcon" style="font-size:1rem;color:#a0aec0">▼</span>
+    </div>
+    <div id="birthdayList" style="font-size:0.88rem"></div>
+  </div>
+
+  
+
+  <!-- ====== Dashboard Card ====== -->
+  <div class="card" id="dashboardCard" style="border-left:4px solid #667eea; margin-bottom: 0;">
+    <div class="card-title">📊 ภาพรวมสถิติ (ทุกอำเภอ)</div>
+    <div id="dashboardContent" style="display:none;">
+      <div style="margin-bottom: 24px; text-align: center;">
+        <canvas id="districtChart" style="max-height: 250px; margin: 0 auto;"></canvas>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <canvas id="careChart" style="max-height: 250px;"></canvas>
+      </div>
+      <div>
+        <canvas id="unitChart" style="max-height: 250px;"></canvas>
+      </div>
+    </div>
+    <div id="dashboardLoading" style="text-align:center; padding: 20px; color: #a0aec0;">
+      <div class="loader" style="margin:0 auto 10px auto;border:3px solid #f3f3f3;border-top:3px solid #667eea;border-radius:50%;width:24px;height:24px;animation:spin 1s linear infinite;"></div>
+      <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+      กำลังรวบรวมข้อมูล...
+    </div>
+  </div>
+
+</div>
+<div class="card">
+    <div class="card-title">🔍 ค้นหา / กรองข้อมูล</div>
+    <div class="filter-grid">
+      <div class="form-group">
+        <label>ค้นหา (ชื่อ / นามสกุล / ชื่อเล่น / เบอร์โทร)</label>
+        <input type="text" id="searchInput" placeholder="พิมพ์เพื่อค้นหา...">
+      </div>
+      <div class="form-group">
+        <label>สถานะฝ่ายวิญญาน</label>
+        <select id="filterStatus"><option value="">ทั้งหมด</option></select>
+      </div>
+      <div class="form-group">
+        <label>หน่วย</label>
+        <select id="filterUnit"><option value="">ทั้งหมด</option></select>
+      </div>
+      <div class="form-group">
+        <label>แคร์</label>
+        <select id="filterCare"><option value="">ทั้งหมด</option></select>
+      </div>
+    </div>
+    <div style="margin-top:10px;text-align:right">
+      <button class="btn btn-outline btn-sm" onclick="clearFilters()">🔄 ล้างตัวกรอง</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="top-bar">
+      <div class="card-title" style="margin-bottom:0">📋 ข้อมูลหลัก</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="openImportModal()">📥 นำเข้าข้อมูล</button>
+        <button class="btn btn-outline" id="moveDataBtn" style="display:none" onclick="openMovePicker()">🔀 ย้ายข้อมูล</button>
+        <button class="btn btn-outline" id="editMemberBtn" style="display:none" onclick="openEditPicker()">✏️ แก้ไขข้อมูลสมาชิก</button>
+
+        <button class="btn btn-primary" onclick="openAddModal()">➕ เพิ่มรายการ</button>
+      </div>
+    </div>
+    <div class="result-count" id="resultCount" style="margin-bottom:10px"></div>
+    <div class="top-scroll" id="topScroll"><div id="topScrollInner"></div></div>
+    <div class="table-wrap" id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ลำดับ</th><th>วันที่ลงทะเบียน</th><th>ชื่อ</th><th>นามสกุล</th><th>ชื่อเล่น</th>
+            <th>สถานะฝ่ายวิญญาน</th><th>แคร์</th><th>หน่วย</th><th>อำเภอ</th><th>รูปภาพ</th>
+            <th>วัน(เกิด)</th><th>เดือน(เกิด)</th><th>ปี(เกิด)</th><th>เบอร์โทร</th><th>ทีมงานดาวิดจังหวัด</th>
+            <th>กลุ่มคนคล้าย</th><th>Hope App 4.0</th><th>ชื่อ-สกุลที่ลงทะเบียน</th>
+            <th>พี่เลี้ยง</th><th>ชลบุรี</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Add/Edit Modal ====== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal modal-wide">
+    <div class="modal-title" id="modalTitle">➕ เพิ่มรายการใหม่</div>
+    <input type="hidden" id="editId">
+    <div class="form-grid">
+      <div class="form-group"><label>วันที่ลงทะเบียน</label><input type="text" id="f_regDate" placeholder="เช่น 06/07/2569 (พ.ศ.)"></div>
+      <div class="form-group"><label>ชื่อ *</label><input type="text" id="f_firstName"></div>
+      <div class="form-group"><label>นามสกุล *</label><input type="text" id="f_lastName"></div>
+      <div class="form-group"><label>ชื่อเล่น</label><input type="text" id="f_nickname"></div>
+      <div class="form-group"><label>สถานะฝ่ายวิญญาน</label><input type="text" id="f_status"></div>
+      <div class="form-group"><label>แคร์</label><input type="text" id="f_care"></div>
+      <div class="form-group"><label>อำเภอ</label>
+        <select id="f_district" onchange="updateUnitOptions()">
+          <option value="เมือง">เมือง</option>
+          <option value="พัทยา">พัทยา</option>
+          <option value="สัตหีบ">สัตหีบ</option>
+          <option value="รอบนอก">รอบนอก</option>
+        </select>
+      </div>
+      <div class="form-group"><label>หน่วย</label><select id="f_unit"></select></div>
+      <div class="form-group full">
+        <label>รูปภาพ — เลือกไฟล์เพื่ออัปโหลด หรือวางลิงก์ URL เอง</label>
+        <input type="file" id="f_photoFile" accept="image/*" onchange="handlePhotoFileSelect()">
+        <input type="text" id="f_photo" placeholder="https://..." oninput="previewPhotoField()" style="margin-top:8px">
+        <div id="photoUploadStatus" style="font-size:0.8rem;color:#a0aec0;margin-top:4px"></div>
+        <img id="f_photoPreview" style="display:none;margin-top:6px;width:60px;height:60px;object-fit:cover;border-radius:8px" onerror="this.style.display='none'">
+      </div>
+      <div class="form-group"><label>วันเกิด (Date)</label><select id="f_birthDay"><option value="">-- วัน --</option></select></div>
+      <div class="form-group"><label>เดือนเกิด (Month)</label>
+        <select id="f_birthMonth">
+          <option value="">-- เดือน --</option>
+          <option value="มกราคม">1 - มกราคม</option>
+          <option value="กุมภาพันธ์">2 - กุมภาพันธ์</option>
+          <option value="มีนาคม">3 - มีนาคม</option>
+          <option value="เมษายน">4 - เมษายน</option>
+          <option value="พฤษภาคม">5 - พฤษภาคม</option>
+          <option value="มิถุนายน">6 - มิถุนายน</option>
+          <option value="กรกฎาคม">7 - กรกฎาคม</option>
+          <option value="สิงหาคม">8 - สิงหาคม</option>
+          <option value="กันยายน">9 - กันยายน</option>
+          <option value="ตุลาคม">10 - ตุลาคม</option>
+          <option value="พฤศจิกายน">11 - พฤศจิกายน</option>
+          <option value="ธันวาคม">12 - ธันวาคม</option>
+        </select>
+      </div>
+      <div class="form-group"><label>ปีเกิด (Year)</label><select id="f_birthYear"><option value="">-- ปี (พ.ศ.) --</option></select></div>
+      <div class="form-group"><label>เบอร์โทร</label><input type="text" id="f_phone"></div>
+      <div class="form-group"><label>เป็นทีมงานดาวิดจังหวัด</label><input type="text" id="f_isProvincialTeam" placeholder="ใช่ / ไม่ใช่"></div>
+      <div class="form-group"><label>กลุ่มคนคล้าย</label><input type="text" id="f_similarGroup"></div>
+      <div class="form-group"><label>สมัคร Hope App 4.0</label><input type="text" id="f_hopeApp" placeholder="ใช่ / ไม่ใช่"></div>
+      <div class="form-group"><label>ชื่อ-สกุลที่ใช้ลงทะเบียน</label><input type="text" id="f_registeredName"></div>
+      <div class="form-group"><label>พี่เลี้ยง</label><input type="text" id="f_mentor"></div>
+      <div class="form-group full"><label>ชลบุรี</label><input type="text" id="f_chonburi"></div>
+    </div>
+    <div class="modal-actions" style="justify-content:space-between">
+      <button class="btn btn-danger btn-sm" id="deleteMemberBtn" style="display:none" onclick="deleteMemberFromModal()">🗑️ ลบรายการนี้</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="saveMember()">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Import Modal ====== -->
+<div class="modal-overlay" id="importModalOverlay">
+  <div class="modal modal-wide">
+    <div class="modal-title">📥 นำเข้าข้อมูลเข้าสู่ Master Data <span id="importDistrictLabel" style="color:#667eea"></span></div>
+
+    <div class="tab-bar">
+      <button class="btn btn-outline active" id="tabPasteBtn" onclick="switchImportTab('paste')">📋 วางข้อมูล (CSV)</button>
+      <button class="btn btn-outline" id="tabSheetBtn" onclick="switchImportTab('sheet')">🔗 เชื่อมจาก Google Sheet อื่น</button>
+    </div>
+
+    <div id="tabPaste">
+      <div class="form-group">
+        <label>วางข้อมูลแบบ CSV (คั่นด้วย comma หรือ tab) — แถวแรกต้องเป็นหัวคอลัมน์ตรงกับชื่อคอลัมน์ใน master</label>
+        <textarea id="pasteArea" rows="6" placeholder="ชื่อ,นามสกุล,ชื่อเล่น,สถานะฝ่ายวิญาน,แคร์,หน่วย,อำเภอ,เบอร์โทร
+สมชาย,ใจดี,ชาย,รับเชื่อใหม่,ทีมเอ,หน่วย1,เมือง,0812345678"></textarea>
+        <div class="import-hint">
+          รองรับหัวคอลัมน์: ชื่อ, นามสกุล, ชื่อเล่น, สถานะฝ่ายวิญาน/สถานะฝ่ายวิญญาน, แคร์, หน่วย, อำเภอ, รูปภาพ, วันที่ลงทะเบียน,
+          Date/เดือน month/Year (วันเดือนปีเกิด แยก 3 คอลัมน์), เบอร์โทร, เป็นทีมงานดาวิดจังหวัด, กลุ่มคนคล้าย, สมัคร Hope App 4.0,
+          ชื่อ - สกุลที่ใช้ลงทะเบียนใน Hope App, พี่เลี้ยง, ชลบุรี (ไม่ต้องมีครบทุกคอลัมน์ก็ได้ ใส่แค่ที่มีข้อมูล)
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <button class="btn btn-outline btn-sm" onclick="previewPaste()">👁️ ดูตัวอย่างก่อนนำเข้า</button>
+      </div>
+    </div>
+
+    <div id="tabSheet" style="display:none">
+      <div class="form-group" style="margin-bottom:12px">
+        <label>ลิงก์ Google Sheet ต้นทาง (ต้องแชร์สิทธิ์ให้บัญชีที่รัน Apps Script ด้วย)</label>
+        <input type="text" id="sourceSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/xxxxx/edit">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>ชื่อชีท (Tab) ในไฟล์ต้นทาง — เว้นว่างได้ถ้ามีชีทเดียว</label>
+        <input type="text" id="sourceSheetName" placeholder="เช่น DATA อำเภอเมือง">
+      </div>
+      <div class="import-hint">
+        ระบบจะจับคู่หัวคอลัมน์ต้นทางกับคอลัมน์ master โดยอัตโนมัติตามชื่อหัวคอลัมน์ (ต้องตั้งชื่อให้ตรงกัน)
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-success" id="startImportSheetBtn" style="width:100%;justify-content:center;font-size:1rem;padding:14px" onclick="importFromExternalSheet()">🚀 เริ่มนำเข้าข้อมูลจากชีทนี้</button>
+      </div>
+      <div id="sheetImportProgress" style="display:none;margin-top:16px">
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:#4a5568;margin-bottom:6px">
+          <span id="progressLabel">กำลังนำเข้า...</span>
+          <span id="progressCount">0 / 0</span>
+        </div>
+        <div style="background:#e2e8f0;border-radius:999px;height:14px;overflow:hidden">
+          <div id="progressBar" style="background:#48bb78;height:100%;width:0%;transition:width 0.2s"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+          <span class="preview-chip badge-new" id="liveAddedCount">🆕 เพิ่มใหม่ 0</span>
+          <span class="preview-chip badge-update" id="liveUpdatedCount">♻️ อัปเดต(ซ้ำ) 0</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="previewArea" style="display:none">
+      <div class="preview-summary">
+        <span class="preview-chip badge-new" id="previewNewCount"></span>
+        <span class="preview-chip badge-update" id="previewUpdateCount"></span>
+        <span class="preview-chip badge-gray" id="previewSkipCount"></span>
+      </div>
+      <div class="preview-wrap">
+        <table>
+          <thead><tr><th>สถานะ</th><th>ชื่อ</th><th>นามสกุล</th><th>ชื่อเล่น</th><th>หน่วย</th><th>เบอร์โทร</th></tr></thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeImportModal()">ปิด</button>
+      <button class="btn btn-success" id="confirmImportBtn" style="display:none" onclick="confirmImport()">✅ ยืนยันนำเข้า</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Birthday Popup Modal ====== -->
+<div class="modal-overlay" id="birthdayModalOverlay" onclick="closeBirthdayModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:440px">
+    <div style="font-size:3rem;margin-bottom:8px;text-align:center">🎂</div>
+    <div class="modal-title" style="justify-content:center;font-size:1.2rem;color:#2d3748">วันเกิดสมาชิกที่กำลังจะถึง (7 วันข้างหน้า)</div>
+    <div id="birthdayModalList" style="margin-bottom:16px;max-height:60vh;overflow-y:auto;text-align:left;font-size:0.92rem"></div>
+    <div style="display:flex;justify-content:center">
+      <button class="btn btn-outline" onclick="closeBirthdayModal()">ปิดหน้าต่างนี้</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Edit Picker Modal (Admin only) — เลือกคนก่อนเปิดฟอร์มแก้ไข ====== -->
+<div class="modal-overlay" id="editPickerOverlay">
+  <div class="modal">
+    <div class="modal-title">✏️ เลือกคนที่จะแก้ไขข้อมูล</div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>ค้นหาชื่อ / นามสกุล / ชื่อเล่น / เบอร์โทร</label>
+      <input type="text" id="editPickerSearch" placeholder="พิมพ์เพื่อค้นหา..." oninput="renderEditPickerList()">
+    </div>
+    <div class="preview-wrap" id="editPickerListWrap">
+      <table>
+        <tbody id="editPickerListBody"></tbody>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeEditPicker()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Move Picker Modal (Admin only) — เลือกคนก่อนเปิดหน้าต่างโยกย้าย ====== -->
+<div class="modal-overlay" id="movePickerOverlay">
+  <div class="modal">
+    <div class="modal-title">🔀 เลือกคนที่จะโยกย้าย</div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>ค้นหาชื่อ / นามสกุล / ชื่อเล่น</label>
+      <input type="text" id="movePickerSearch" placeholder="พิมพ์เพื่อค้นหา..." oninput="renderMovePickerList()">
+    </div>
+    <div class="preview-wrap" id="movePickerListWrap">
+      <table>
+        <tbody id="movePickerListBody"></tbody>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeMovePicker()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Move Member Modal (Admin only) ====== -->
+<div class="modal-overlay" id="moveModalOverlay">
+  <div class="modal">
+    <div class="modal-title">🔀 โยกย้ายสมาชิก</div>
+    <input type="hidden" id="moveMemberId">
+    <div style="background:#f7fafc;border-radius:10px;padding:12px;margin-bottom:16px;font-size:0.9rem">
+      <div style="color:#718096;font-size:0.8rem">กำลังโยกย้าย</div>
+      <div style="font-weight:700;color:#2d3748" id="moveMemberName">-</div>
+      <div style="color:#a0aec0;font-size:0.8rem;margin-top:2px" id="moveMemberFrom">-</div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>อำเภอปลายทาง</label>
+        <select id="moveTargetDistrict"></select>
+      </div>
+      <div class="form-group">
+        <label>หน่วยปลายทาง (เว้นว่าง = ไม่เปลี่ยน)</label>
+        <input type="text" id="moveTargetUnit" placeholder="เว้นว่างถ้าไม่เปลี่ยน">
+      </div>
+      <div class="form-group">
+        <label>แคร์ปลายทาง (เว้นว่าง = ไม่เปลี่ยน)</label>
+        <input type="text" id="moveTargetCare" placeholder="เว้นว่างถ้าไม่เปลี่ยน">
+      </div>
+    </div>
+    <div id="moveConfirmBox" style="display:none;background:#fff5f5;border:1px solid #fc8181;border-radius:10px;padding:14px;margin-top:16px">
+      <div style="font-weight:700;color:#c53030;margin-bottom:6px">⚠️ ยืนยันการโยกย้าย (ขั้นที่ 2)</div>
+      <div style="font-size:0.88rem;color:#742a2a" id="moveConfirmText"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeMoveModal()">ยกเลิก</button>
+      <button class="btn btn-warning" id="moveStep1Btn" onclick="moveStep1()">ตรวจสอบก่อนย้าย →</button>
+      <button class="btn btn-danger" id="moveStep2Btn" style="display:none" onclick="moveStep2()">✅ ยืนยันโยกย้าย</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== User Management Modal (Admin only) ====== -->
+<div class="modal-overlay" id="usersModalOverlay">
+  <div class="modal modal-wide">
+    <div class="modal-title">👥 จัดการผู้ใช้งานระบบ</div>
+    <div id="usersLoading" class="loading" style="display:none"><div class="spinner"></div>กำลังโหลด...</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ชื่อ-สกุล</th><th>Username</th><th>สิทธิ์</th><th>สถานะ</th><th>จัดการ</th></tr>
+        </thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeUsersModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Activity Log Modal (Admin only) ====== -->
+<div class="modal-overlay" id="logsModalOverlay">
+  <div class="modal modal-wide">
+    <div class="modal-title">📜 ประวัติการแก้ไข (ล่าสุด 300 รายการ)</div>
+    <div id="logsLoading" class="loading" style="display:none"><div class="spinner"></div>กำลังโหลด...</div>
+    <div class="table-wrap" style="max-height:500px;overflow-y:auto">
+      <table>
+        <thead>
+          <tr><th>เวลา</th><th>ผู้ใช้</th><th>การกระทำ</th><th>อำเภอ</th><th>รายละเอียด</th></tr>
+        </thead>
+        <tbody id="logsTableBody"></tbody>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="loadLogs()">🔄 รีเฟรช</button>
+      <button class="btn btn-outline" onclick="closeLogsModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Change Password Modal ====== -->
+<div class="modal-overlay" id="changePwModalOverlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">🔑 เปลี่ยนรหัสผ่าน</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>รหัสผ่านเดิม</label>
+      <input type="password" id="cpOldPassword">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>รหัสผ่านใหม่ (อย่างน้อย 4 ตัวอักษร)</label>
+      <input type="password" id="cpNewPassword">
+    </div>
+    <div class="form-group" style="margin-bottom:8px">
+      <label>ยืนยันรหัสผ่านใหม่</label>
+      <input type="password" id="cpConfirmPassword">
+    </div>
+    <div id="cpMsg" style="font-size:0.82rem;min-height:18px;margin-bottom:8px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeChangePasswordModal()">ยกเลิก</button>
+      <button class="btn btn-primary" id="cpSubmitBtn" onclick="doChangePassword()">เปลี่ยนรหัสผ่าน</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Move Success Popup Modal ====== -->
+<div class="modal-overlay" id="moveSuccessOverlay" style="z-index:600">
+  <div class="modal" style="max-width:440px;text-align:center">
+    <div style="font-size:3rem;margin-bottom:8px">🎉</div>
+    <div class="modal-title" style="justify-content:center;font-size:1.2rem;color:#2d3748">ย้ายข้อมูลสำเร็จ</div>
+    <div style="background:#f7fafc;border-radius:14px;padding:18px;margin-bottom:16px;text-align:left">
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:0.92rem">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:1.2rem">👤</span>
+          <div>
+            <div style="font-size:0.75rem;color:#a0aec0">รายชื่อที่ย้าย</div>
+            <div style="font-weight:700;color:#2d3748" id="moveSuccessName">-</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:1.2rem">📍</span>
+          <div>
+            <div style="font-size:0.75rem;color:#a0aec0">จาก</div>
+            <div style="font-weight:700;color:#fc8181" id="moveSuccessFrom">-</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:1.2rem">🏙️</span>
+          <div>
+            <div style="font-size:0.75rem;color:#a0aec0">ไปยัง</div>
+            <div style="font-weight:700;color:#48bb78" id="moveSuccessTo">-</div>
+          </div>
+        </div>
+        <div id="moveSuccessUnitRow" style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:1.2rem">🏢</span>
+          <div>
+            <div style="font-size:0.75rem;color:#a0aec0">หน่วยใหม่</div>
+            <div style="font-weight:700;color:#667eea" id="moveSuccessUnit">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="document.getElementById('moveSuccessOverlay').classList.remove('active')">✅ รับทราบ</button>
+  </div>
+</div>
+
+
+<!-- ====== Toast Notification ====== -->
+<div class="toast" id="toast"></div>
+
+<script>
+
+// ====================================================
+// ⚙️ CONFIG — แก้ตรงนี้!
+// ====================================================
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxY5rmjYxynVM5hP6yYW-GqVej4RSOzlqvE32N4rsByYwi9jwe9KV-ccOLg2TIsNatStQ/exec";
+
+// รายชื่อชุดข้อมูล (Sheet/Tab) ต้องตรงกับ SHEET_NAMES ใน apps-script.js เป๊ะๆ
+const DISTRICTS = ["DATA อำเภอเมือง", "DATA พัทยา", "DATA สัตหีบ", "DATA รอบนอก"];
+let currentSheet = DISTRICTS[0];
+
+// field keys ตรงกับ apps-script.js (ไม่รวม id)
+const FIELD_KEYS = [
+  "regDate","firstName","lastName","nickname","status","care","unit","district",
+  "photo","birthDay","birthMonth","birthYear","phone","isProvincialTeam","similarGroup","hopeApp",
+  "registeredName","mentor","chonburi"
+];
+
+// header ที่รองรับตอน import (ไทย, รองรับ typo วิญญาน/วิญญาณ) -> field key ภายใน
+const HEADER_MAP = {
+  "วันที่ลงทะเบียน": "regDate",
+  "ชื่อ": "firstName",
+  "นามสกุล": "lastName",
+  "ชื่อเล่น": "nickname",
+  "สถานะฝ่ายวิญญาณ": "status", "สถานะฝ่ายวิญญาน": "status", "สถานะ": "status",
+  "แคร์": "care",
+  "หน่วย": "unit",
+  "อำเภอ": "district",
+  "รูปภาพ": "photo",
+  "date": "birthDay", "วัน": "birthDay",
+  "month": "birthMonth", "เดือน": "birthMonth",
+  "year": "birthYear", "ปี": "birthYear",
+  "เบอร์โทร": "phone",
+  "เป็นทีมงานดาวิดจังหวัด": "isProvincialTeam",
+  "กลุ่มคนคล้าย": "similarGroup",
+  "สมัคร hope app 4.0": "hopeApp",
+  "ชื่อ - สกุลที่ใช้ลงทะเบียนใน hope app": "registeredName",
+  "ชื่อ - สกุลที่ใช้ลงทะเบียน": "registeredName", "ชื่อ-สกุลที่ใช้ลงทะเบียน": "registeredName",
+  "พี่เลี้ยง": "mentor",
+  "ชลบุรี": "chonburi"
+};
+
+let allMembers = [];
+let filteredMembers = [];
+let pendingImportRows = [];
+
+// หน่วยที่มีอยู่จริงในแต่ละอำเภอ (ใช้กรองตัวเลือกหน่วยในฟอร์ม)
+const UNITS_BY_DISTRICT = {
+  "เมือง":   ["ALPHA", "ONE FOR ALL", "PEACEFUL", "GLORY"],
+  "พัทยา":   ["Cornerstone", "Power Team"],
+  "สัตหีบ":  ["Energy", "SMP"],
+  "รอบนอก":  ["หนองใหญ่", "บ่อทอง", "บ้านบึง", "พนัสนิคม", "ศรีราชา"]
+};
+
+// เติมตัวเลือกหน่วยตามอำเภอที่เลือก — ถ้าค่าปัจจุบัน (keepValue) ไม่อยู่ในลิสต์ จะเติมเป็นตัวเลือกพิเศษไว้ท้ายสุด กันข้อมูลเดิมหาย
+function updateUnitOptions(keepValue) {
+  const district = document.getElementById("f_district").value;
+  const unitSel = document.getElementById("f_unit");
+  const currentValue = keepValue !== undefined ? keepValue : unitSel.value;
+  const units = UNITS_BY_DISTRICT[district] || [];
+
+  let optionsHtml = `<option value="">-- เลือกหน่วย --</option>` +
+    units.map(u => `<option value="${u}">${u}</option>`).join("");
+
+  if (currentValue && !units.includes(currentValue)) {
+    optionsHtml += `<option value="${currentValue}">${currentValue} (เดิม)</option>`;
+  }
+
+  unitSel.innerHTML = optionsHtml;
+  unitSel.value = currentValue || "";
+}
+
+// ====================================================
+// Auth (login/session)
+// ====================================================
+let authToken = localStorage.getItem("md_authToken") || "";
+let authDisplayName = localStorage.getItem("md_authDisplayName") || "";
+let authRole = localStorage.getItem("md_authRole") || "user";
+
+function showLoginScreen() {
+  document.getElementById("loginOverlay").style.display = "flex";
+  showLoginForm();
+}
+
+function showRegisterForm() {
+  document.querySelector("#loginOverlay > div:first-child").style.display = "none";
+  document.getElementById("registerCard").style.display = "block";
+  document.getElementById("registerMsg").textContent = "";
+}
+
+function showLoginForm() {
+  document.querySelector("#loginOverlay > div:first-child").style.display = "block";
+  document.getElementById("registerCard").style.display = "none";
+  document.getElementById("loginError").textContent = "";
+}
+
+async function doRegister() {
+  const displayName = document.getElementById("regDisplayName").value.trim();
+  const username = document.getElementById("regUsername").value.trim();
+  const password = document.getElementById("regPassword").value.trim();
+  const msgEl = document.getElementById("registerMsg");
+  const btn = document.getElementById("registerBtn");
+  msgEl.textContent = "";
+  msgEl.style.color = "#e53e3e";
+
+  if (!username || !password) { msgEl.textContent = "กรุณากรอก Username และ Password"; return; }
+
+  btn.disabled = true; btn.textContent = "กำลังสมัคร...";
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "register", username, password, displayName })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+
+    msgEl.style.color = "#38a169";
+    msgEl.textContent = "✅ " + json.message;
+    document.getElementById("regDisplayName").value = "";
+    document.getElementById("regUsername").value = "";
+    document.getElementById("regPassword").value = "";
+    setTimeout(showLoginForm, 2500);
+  } catch (e) {
+    msgEl.style.color = "#e53e3e";
+    msgEl.textContent = e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "สมัครสมาชิก";
+  }
+}
+function hideLoginScreen() {
+  document.getElementById("loginOverlay").style.display = "none";
+  document.getElementById("loggedInUser").textContent = authDisplayName ? `👤 ${authDisplayName}${authRole === "superadmin" ? " (Super Admin)" : authRole === "admin" ? " (Admin)" : ""}` : "";
+  document.getElementById("manageUsersBtn").style.display = (authRole === "admin" || authRole === "superadmin") ? "inline-flex" : "none";
+  document.getElementById("viewLogsBtn").style.display = (authRole === "admin" || authRole === "superadmin") ? "inline-flex" : "none";
+  document.getElementById("moveDataBtn").style.display = (authRole === "admin" || authRole === "superadmin") ? "inline-flex" : "none";
+  document.getElementById("editMemberBtn").style.display = (authRole === "admin" || authRole === "superadmin") ? "inline-flex" : "none";
+
+}
+
+async function doLogin() {
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
+  const errEl = document.getElementById("loginError");
+  const btn = document.getElementById("loginBtn");
+  errEl.textContent = "";
+
+  if (!username || !password) { errEl.textContent = "กรุณากรอก Username และ Password"; return; }
+
+  btn.disabled = true; btn.textContent = "กำลังเข้าสู่ระบบ...";
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "login", username, password })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+
+    authToken = json.token;
+    authDisplayName = json.displayName;
+    authRole = json.role || "user";
+    localStorage.setItem("md_authToken", authToken);
+    localStorage.setItem("md_authDisplayName", authDisplayName);
+    localStorage.setItem("md_authRole", authRole);
+
+    hideLoginScreen();
+    startApp();
+  } catch (e) {
+    errEl.textContent = e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "เข้าสู่ระบบ";
+  }
+}
+
+function doLogout() {
+  if (!confirm("ต้องการออกจากระบบใช่ไหม?")) return;
+  fetch(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "logout", token: authToken }) }).catch(() => {});
+  authToken = "";
+  authDisplayName = "";
+  authRole = "user";
+  localStorage.removeItem("md_authToken");
+  localStorage.removeItem("md_authDisplayName");
+  localStorage.removeItem("md_authRole");
+  document.getElementById("loginUsername").value = "";
+  document.getElementById("loginPassword").value = "";
+  showLoginScreen();
+}
+
+// เรียกทุกครั้งที่ API ตอบกลับว่า session หมดอายุ (needLogin) เพื่อบังคับ login ใหม่
+function handleAuthExpired(json) {
+  if (json && json.needLogin) {
+    authToken = "";
+    localStorage.removeItem("md_authToken");
+    showLoginScreen();
+    return true;
+  }
+  return false;
+}
+
+// ====================================================
+// District Tabs
+// ====================================================
+function renderDistrictTabs() {
+  const wrap = document.getElementById("districtTabs");
+  wrap.innerHTML = DISTRICTS.map(d =>
+    `<button class="btn btn-outline ${d === currentSheet ? "active" : ""}" onclick="switchDistrict('${d}')">${d.replace("DATA ", "")}</button>`
+  ).join("");
+}
+
+function switchDistrict(d) {
+  currentSheet = d;
+  renderDistrictTabs();
+  loadData();
+}
+
+
+// ====================================================
+// Load & Render
+// ====================================================
+async function loadData() {
+  showLoading();
+  try {
+    const res  = await fetch(`${APPS_SCRIPT_URL}?action=getAll&sheet=${encodeURIComponent(currentSheet)}&token=${encodeURIComponent(authToken)}`);
+    const json = await res.json();
+    if (!json.success) {
+      if (handleAuthExpired(json)) return;
+      throw new Error(json.message);
+    }
+    allMembers = json.data;
+    populateFilters();
+    applyFilters();
+    updateStats();
+  } catch(e) {
+    showError("โหลดข้อมูลไม่ได้: " + e.message);
+    document.getElementById("tableBody").innerHTML =
+      `<tr><td colspan="20" style="text-align:center;color:#fc8181;padding:32px">❌ โหลดข้อมูลไม่ได้<br><small>${e.message}</small></td></tr>`;
+  }
+}
+
+function td(v) { return v || v === 0 ? v : "-"; }
+
+function renderTable(members) {
+  const tbody = document.getElementById("tableBody");
+  document.getElementById("resultCount").textContent = `แสดง ${members.length} รายการ`;
+
+  if (members.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="20" style="text-align:center;color:#a0aec0;padding:48px">ไม่พบข้อมูล</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = members.map(m => `
+    <tr>
+      <td><b>${m.id}</b></td>
+      <td>${td(formatThaiDate(m.regDate) || m.regDate)}</td>
+      <td>${td(m.firstName)}</td>
+      <td>${td(m.lastName)}</td>
+      <td>${m.nickname ? `<span class="badge badge-blue">${m.nickname}</span>` : "-"}</td>
+      <td>${m.status ? `<span class="badge badge-green">${m.status}</span>` : "-"}</td>
+      <td>${td(m.care)}</td>
+      <td>${m.unit ? `<span class="badge badge-orange">${m.unit}</span>` : "-"}</td>
+      <td>${td(m.district)}</td>
+      <td>${m.photo ? `<img src="${m.photo}" alt="photo" loading="lazy" decoding="async" style="width:36px;height:36px;object-fit:cover;border-radius:8px;vertical-align:middle" onerror="this.style.display='none'">` : "-"}</td>
+      <td>${td(m.birthDay)}</td>
+      <td>${({"1":"มกราคม","2":"กุมภาพันธ์","3":"มีนาคม","4":"เมษายน","5":"พฤษภาคม","6":"มิถุนายน","7":"กรกฎาคม","8":"สิงหาคม","9":"กันยายน","10":"ตุลาคม","11":"พฤศจิกายน","12":"ธันวาคม"})[String(m.birthMonth||"").trim()] || td(m.birthMonth)}</td>
+      <td>${td(m.birthYear)}</td>
+      <td>${td(m.phone)}</td>
+      <td>${td(m.isProvincialTeam)}</td>
+      <td>${td(m.similarGroup)}</td>
+      <td>${td(m.hopeApp)}</td>
+      <td>${td(m.registeredName)}</td>
+      <td>${td(m.mentor)}</td>
+      <td>${td(m.chonburi)}</td>
+    </tr>`).join("");
+
+  setupTopScrollSync();
+}
+
+function showLoading() {
+  document.getElementById("tableBody").innerHTML =
+    `<tr><td colspan="20"><div class="loading"><div class="spinner"></div>กำลังโหลด...</div></td></tr>`;
+}
+
+// ====================================================
+// Filters
+// ====================================================
+function populateFilters() {
+  fillSelect("filterStatus", [...new Set(allMembers.map(m => String(m.status || "").trim()).filter(Boolean))]);
+  fillSelect("filterUnit",   [...new Set(allMembers.map(m => String(m.unit || "").trim()).filter(Boolean))]);
+  fillSelect("filterCare",   [...new Set(allMembers.map(m => String(m.care || "").trim()).filter(Boolean))]);
+}
+
+function fillSelect(id, options) {
+  const sel = document.getElementById(id);
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">ทั้งหมด</option>` +
+    options.map(o => `<option value="${o}" ${o===cur?"selected":""}>${o}</option>`).join("");
+}
+
+function applyFilters() {
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  const status = document.getElementById("filterStatus").value;
+  const unit   = document.getElementById("filterUnit").value;
+  const care   = document.getElementById("filterCare").value;
+
+  filteredMembers = allMembers.filter(m => {
+    const matchSearch = !search ||
+      String(m.firstName || "").toLowerCase().includes(search) ||
+      String(m.lastName || "").toLowerCase().includes(search) ||
+      String(m.nickname || "").toLowerCase().includes(search) ||
+      String(m.phone || "").toLowerCase().includes(search);
+    return matchSearch &&
+      (!status || String(m.status || "").trim() === status) &&
+      (!unit   || String(m.unit   || "").trim() === unit) &&
+      (!care   || String(m.care   || "").trim() === care);
+  });
+
+  console.log("[applyFilters] search=" + JSON.stringify(search) + " totalBefore=" + allMembers.length + " totalAfter=" + filteredMembers.length);
+
+  renderTable(filteredMembers);
+  document.getElementById("statFiltered").textContent = filteredMembers.length;
+}
+
+function updateStats() {
+  document.getElementById("statTotal").textContent = allMembers.length;
+  document.getElementById("statUnits").textContent = new Set(allMembers.map(m=>m.unit).filter(Boolean)).size;
+  document.getElementById("statCare").textContent  = new Set(allMembers.map(m=>m.care).filter(Boolean)).size;
+  document.getElementById("statFiltered").textContent = filteredMembers.length;
+}
+
+// ====================================================
+// Add/Edit Modal
+// ====================================================
+function openAddModal() {
+  document.getElementById("modalTitle").textContent = "➕ เพิ่มรายการใหม่";
+  clearForm();
+  document.getElementById("deleteMemberBtn").style.display = "none";
+  document.getElementById("modalOverlay").classList.add("active");
+}
+
+function openEditModal(id) {
+  const m = allMembers.find(m => m.id == id);
+  if (!m) return;
+  window._editOriginalDistrict = m.district || ""; // จำอำเภอเดิมไว้ตรวจสอบตอนบันทึก
+  document.getElementById("modalTitle").textContent = "✏️ แก้ไขข้อมูล";
+  document.getElementById("editId").value = m.id;
+  document.getElementById("deleteMemberBtn").style.display = (authRole === "admin" || authRole === "superadmin") ? "inline-flex" : "none";
+  document.getElementById("f_regDate").value = formatThaiDate(m.regDate) || m.regDate || "";
+  document.getElementById("f_firstName").value = m.firstName || "";
+  document.getElementById("f_lastName").value = m.lastName || "";
+  document.getElementById("f_nickname").value = m.nickname || "";
+  document.getElementById("f_status").value = m.status || "";
+  document.getElementById("f_care").value = m.care || "";
+  document.getElementById("f_district").value = m.district || "เมือง";
+  updateUnitOptions(m.unit || ""); // เติมตัวเลือกหน่วยตามอำเภอ พร้อมรักษาค่าหน่วยเดิมไว้
+  document.getElementById("f_photo").value = m.photo || "";
+  // ตั้งค่า dropdown วันเกิด
+  const monthMap = {"1":"มกราคม","2":"กุมภาพันธ์","3":"มีนาคม","4":"เมษายน","5":"พฤษภาคม","6":"มิถุนายน","7":"กรกฎาคม","8":"สิงหาคม","9":"กันยายน","10":"ตุลาคม","11":"พฤศจิกายน","12":"ธันวาคม"};
+  const rawMonth = String(m.birthMonth || "").trim();
+  const mappedMonth = monthMap[rawMonth] || rawMonth;
+  document.getElementById("f_birthDay").value = String(m.birthDay || "").trim();
+  document.getElementById("f_birthMonth").value = mappedMonth;
+  document.getElementById("f_birthYear").value = String(m.birthYear || "").trim();
+  document.getElementById("f_phone").value = m.phone || "";
+  document.getElementById("f_isProvincialTeam").value = m.isProvincialTeam || "";
+  document.getElementById("f_similarGroup").value = m.similarGroup || "";
+  document.getElementById("f_hopeApp").value = m.hopeApp || "";
+  document.getElementById("f_registeredName").value = m.registeredName || "";
+  document.getElementById("f_mentor").value = m.mentor || "";
+  document.getElementById("f_chonburi").value = m.chonburi || "";
+  previewPhotoField();
+  document.getElementById("modalOverlay").classList.add("active");
+}
+
+function previewPhotoField() {
+  const url = document.getElementById("f_photo").value.trim();
+  const img = document.getElementById("f_photoPreview");
+  if (url) { img.src = url; img.style.display = "inline-block"; }
+  else { img.style.display = "none"; }
+}
+
+async function handlePhotoFileSelect() {
+  const fileInput = document.getElementById("f_photoFile");
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById("photoUploadStatus");
+  statusEl.textContent = "⏳ กำลังอัปโหลด...";
+
+  try {
+    const base64 = await fileToBase64(file);
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "uploadPhoto",
+        sheet: currentSheet,
+        token: authToken,
+        base64,
+        fileName: file.name,
+        mimeType: file.type
+      })
+    });
+    const json = await res.json();
+    if (!json.success) {
+      if (handleAuthExpired(json)) return;
+      throw new Error(json.message);
+    }
+    document.getElementById("f_photo").value = json.url;
+    previewPhotoField();
+    statusEl.textContent = "✅ อัปโหลดสำเร็จ";
+    showToast("อัปโหลดรูปสำเร็จ ✅", "success");
+  } catch (e) {
+    statusEl.textContent = "❌ อัปโหลดไม่สำเร็จ: " + e.message;
+    showToast("อัปโหลดรูปไม่สำเร็จ: " + e.message, "error");
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]); // ตัด header "data:image/...;base64," ออก
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function closeModal() { document.getElementById("modalOverlay").classList.remove("active"); }
+
+function clearForm() {
+  document.getElementById("editId").value = "";
+  FIELD_KEYS.forEach(k => {
+    const el = document.getElementById("f_" + k);
+    if (el && k !== "district" && k !== "unit") el.value = "";
+  });
+  document.getElementById("f_district").value = "เมือง";
+  updateUnitOptions(""); // เติมตัวเลือกหน่วยของอำเภอเมือง (ค่าเริ่มต้น)
+  document.getElementById("f_photoPreview").style.display = "none";
+  document.getElementById("f_photoFile").value = "";
+  document.getElementById("photoUploadStatus").textContent = "";
+}
+
+// แปลง regDate เป็นวันที่ปกติแบบ พ.ศ. (dd/mm/yyyy)
+// ถ้าปีมากกว่า 2400 ถือว่าเป็น พ.ศ. อยู่แล้ว ไม่ต้องบวก 543 ซ้ำอีก
+function formatThaiDate(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value); // แปลงไม่ได้ แสดงค่าเดิมไปเลย
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  const thaiYear = year > 2400 ? year : year + 543; // ถ้า > 2400 = เป็น พ.ศ. อยู่แล้ว
+  return `${day}/${month}/${thaiYear}`;
+}
+
+// ====================================================
+// CRUD
+// ====================================================
+async function saveMember() {
+  const firstName = document.getElementById("f_firstName").value.trim();
+  const lastName  = document.getElementById("f_lastName").value.trim();
+  if (!firstName || !lastName) { showToast("กรุณากรอกชื่อและนามสกุล", "error"); return; }
+
+  const editId = document.getElementById("editId").value;
+  const newDistrict = document.getElementById("f_district").value.trim();
+  const newUnit = document.getElementById("f_unit").value.trim();
+  const payload = { action: editId ? "update" : "add", sheet: currentSheet, token: authToken, id: editId, firstName, lastName };
+  FIELD_KEYS.forEach(k => {
+    if (k === "firstName" || k === "lastName") return;
+    const el = document.getElementById("f_" + k);
+    if (el) payload[k] = el.value.trim();
+  });
+
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (!json.success) {
+      if (handleAuthExpired(json)) return;
+      throw new Error(json.message);
+    }
+
+    // ถ้าเป็นการแก้ไขและมีการเปลี่ยนอำเภอ ให้ทำการย้ายข้อมูลไปยังชีทอำเภอใหม่ด้วย
+    const originalDistrict = window._editOriginalDistrict || "";
+    if (editId && newDistrict && newDistrict !== originalDistrict) {
+      const movePayload = { action: "moveMember", sheet: currentSheet, token: authToken, id: editId, targetDistrict: newDistrict };
+      if (newUnit) movePayload.targetUnit = newUnit;
+      const moveRes = await fetch(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(movePayload) });
+      const moveJson = await moveRes.json();
+      if (!moveJson.success) {
+        if (handleAuthExpired(moveJson)) return;
+        throw new Error("อัปเดตสำเร็จ แต่ย้ายไม่ได้: " + moveJson.message);
+      }
+      showToast("แก้ไขและย้ายไป " + newDistrict + " สำเร็จ ✅", "success");
+      // แสดง popup บอกรายละเอียด
+      const memberName = firstName + " " + lastName;
+      document.getElementById("moveSuccessName").textContent = memberName;
+      document.getElementById("moveSuccessFrom").textContent = originalDistrict || "ไม่ระบุ";
+      document.getElementById("moveSuccessTo").textContent = newDistrict;
+      const unitRow = document.getElementById("moveSuccessUnitRow");
+      if (newUnit) {
+        document.getElementById("moveSuccessUnit").textContent = newUnit;
+        unitRow.style.display = "flex";
+      } else {
+        unitRow.style.display = "none";
+      }
+      document.getElementById("moveSuccessOverlay").classList.add("active");
+      // สลับแท็บไปยังอำเภอใหม่
+      const matchedSheet = DISTRICTS.find(d => d.includes(newDistrict));
+      if (matchedSheet) { currentSheet = matchedSheet; renderDistrictTabs(); }
+    } else {
+      showToast(editId ? "แก้ไขสำเร็จ ✅" : "เพิ่มรายการสำเร็จ ✅", "success");
+      const matchedSheet = DISTRICTS.find(d => d.includes(newDistrict));
+      if (newDistrict && matchedSheet && matchedSheet !== currentSheet) {
+        currentSheet = matchedSheet; renderDistrictTabs();
+      }
+    }
+
+    closeModal();
+    loadData();
+  } catch(e) {
+    showToast("เกิดข้อผิดพลาด: " + e.message, "error");
+  }
+}
+
+function confirmDelete(id, name) {
+  if (!confirm(`ต้องการลบ "${name}" ออกจากระบบ?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) return;
+  deleteMemberById(id);
+}
+
+function deleteMemberFromModal() {
+  const id = document.getElementById("editId").value;
+  const name = (document.getElementById("f_firstName").value + " " + document.getElementById("f_lastName").value).trim();
+  if (!id) return;
+  if (!confirm(`⚠️ ยืนยันลบ "${name}" ออกจากระบบ?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้!`)) return;
+  if (!confirm(`⚠️⚠️ ยืนยันอีกครั้ง! ลบ "${name}" จริงๆ ใช่ไหม?`)) return;
+  closeModal();
+  deleteMemberById(id);
+}
+
+// ====================================================
+// โยกย้ายสมาชิก (Admin เท่านั้น) — ยืนยัน 2 ขั้น
+// ====================================================
+// ====================================================
+// เลือกคนก่อนแก้ไข (Edit Picker) — ทำงานกับข้อมูลของอำเภอที่กำลังเปิดอยู่
+// ====================================================
+function openEditPicker() {
+  document.getElementById("editPickerSearch").value = "";
+  document.getElementById("editPickerOverlay").classList.add("active");
+  renderEditPickerList();
+}
+function closeEditPicker() {
+  document.getElementById("editPickerOverlay").classList.remove("active");
+}
+
+function renderEditPickerList() {
+  const search = document.getElementById("editPickerSearch").value.trim().toLowerCase();
+  const listBody = document.getElementById("editPickerListBody");
+
+  const matches = allMembers.filter(m => {
+    if (!search) return true;
+    return String(m.firstName || "").toLowerCase().includes(search) ||
+           String(m.lastName || "").toLowerCase().includes(search) ||
+           String(m.nickname || "").toLowerCase().includes(search) ||
+           String(m.phone || "").toLowerCase().includes(search);
+  });
+
+  if (matches.length === 0) {
+    listBody.innerHTML = `<tr><td style="text-align:center;color:#a0aec0;padding:20px">ไม่พบรายชื่อ</td></tr>`;
+    return;
+  }
+
+  listBody.innerHTML = matches.slice(0, 50).map(m => {
+    const name = `${m.firstName || ""} ${m.lastName || ""}`.trim();
+    return `<tr style="cursor:pointer" onclick='pickMemberToEdit(${JSON.stringify(m.id)})'>
+      <td style="padding:10px 12px">
+        <b>${name}</b>
+        ${m.nickname ? `<span class="badge badge-blue" style="margin-left:6px">${m.nickname}</span>` : ""}
+        <div style="font-size:0.78rem;color:#a0aec0">เบอร์โทร: ${m.phone || "-"}</div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function pickMemberToEdit(id) {
+  closeEditPicker();
+  openEditModal(id);
+}
+
+// ====================================================
+// เลือกคนก่อนโยกย้าย (Move Picker) — ทำงานกับข้อมูลของอำเภอที่กำลังเปิดอยู่
+// ====================================================
+function openMovePicker() {
+  document.getElementById("movePickerSearch").value = "";
+  document.getElementById("movePickerOverlay").classList.add("active");
+  renderMovePickerList();
+}
+function closeMovePicker() {
+  document.getElementById("movePickerOverlay").classList.remove("active");
+}
+
+function renderMovePickerList() {
+  const search = document.getElementById("movePickerSearch").value.trim().toLowerCase();
+  const listBody = document.getElementById("movePickerListBody");
+
+  const matches = allMembers.filter(m => {
+    if (!search) return true;
+    return String(m.firstName || "").toLowerCase().includes(search) ||
+           String(m.lastName || "").toLowerCase().includes(search) ||
+           String(m.nickname || "").toLowerCase().includes(search);
+  });
+
+  if (matches.length === 0) {
+    listBody.innerHTML = `<tr><td style="text-align:center;color:#a0aec0;padding:20px">ไม่พบรายชื่อ</td></tr>`;
+    return;
+  }
+
+  listBody.innerHTML = matches.slice(0, 50).map(m => {
+    const name = `${m.firstName || ""} ${m.lastName || ""}`.trim();
+    return `<tr style="cursor:pointer" onclick='pickMemberToMove(${JSON.stringify(m.id)}, ${JSON.stringify(name)})'>
+      <td style="padding:10px 12px">
+        <b>${name}</b>
+        ${m.nickname ? `<span class="badge badge-blue" style="margin-left:6px">${m.nickname}</span>` : ""}
+        <div style="font-size:0.78rem;color:#a0aec0">หน่วย: ${m.unit || "-"} · แคร์: ${m.care || "-"}</div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function pickMemberToMove(id, name) {
+  closeMovePicker();
+  openMoveModal(id, name);
+}
+
+function openMoveModal(id, name) {
+  document.getElementById("moveMemberId").value = id;
+  document.getElementById("moveMemberName").value = name;
+  document.getElementById("moveMemberName").textContent = name;
+  document.getElementById("moveMemberFrom").textContent = "อำเภอต้นทาง: " + currentSheet.replace("DATA ", "");
+
+  // เติมตัวเลือกอำเภอปลายทาง
+  const sel = document.getElementById("moveTargetDistrict");
+  sel.innerHTML = DISTRICTS.map(d => `<option value="${d}" ${d === currentSheet ? "selected" : ""}>${d.replace("DATA ", "")}</option>`).join("");
+  document.getElementById("moveTargetUnit").value = "";
+  document.getElementById("moveTargetCare").value = "";
+
+  // reset สู่ขั้นที่ 1
+  document.getElementById("moveConfirmBox").style.display = "none";
+  document.getElementById("moveStep1Btn").style.display = "inline-flex";
+  document.getElementById("moveStep2Btn").style.display = "none";
+
+  document.getElementById("moveModalOverlay").classList.add("active");
+}
+
+function closeMoveModal() {
+  document.getElementById("moveModalOverlay").classList.remove("active");
+}
+
+// ====================================================
+// จัดการผู้ใช้ (Admin เท่านั้น) — อนุมัติ/ปฏิเสธ/กำหนดสิทธิ์
+// ====================================================
+function openUsersModal() {
+  document.getElementById("usersModalOverlay").classList.add("active");
+  loadUsers();
+}
+function closeUsersModal() {
+  document.getElementById("usersModalOverlay").classList.remove("active");
+}
+
+async function loadUsers() {
+  const tbody = document.getElementById("usersTableBody");
+  const loading = document.getElementById("usersLoading");
+  loading.style.display = "block";
+  tbody.innerHTML = "";
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=listUsers&token=${encodeURIComponent(authToken)}`);
+    const json = await res.json();
+    if (!json.success) {
+      if (handleAuthExpired(json)) return;
+      throw new Error(json.message);
+    }
+    renderUsers(json.users || []);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#fc8181;padding:24px">โหลดไม่ได้: ${e.message}</td></tr>`;
+  } finally {
+    loading.style.display = "none";
+  }
+}
+
+function statusBadge(status) {
+  if (status === "approved") return '<span class="badge badge-green">อนุมัติแล้ว</span>';
+  if (status === "pending")  return '<span class="badge badge-orange">รออนุมัติ</span>';
+  if (status === "rejected") return '<span class="badge" style="background:#fed7d7;color:#c53030">ถูกปฏิเสธ</span>';
+  return `<span class="badge badge-gray">${status}</span>`;
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById("usersTableBody");
+  if (users.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#a0aec0;padding:24px">ยังไม่มีผู้ใช้</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = users.map(u => {
+    const uname = JSON.stringify(u.username);
+    let actions = "";
+
+    // ป้องกันบัญชี Super Admin: ถ้าเป้าหมายเป็น superadmin และผู้ใช้ปัจจุบันไม่ใช่ superadmin ล็อกไว้ทั้งหมด
+    const locked = (u.role === "superadmin" && authRole !== "superadmin");
+
+    if (locked) {
+      actions = `<span style="color:#a0aec0;font-size:0.8rem">🔒 แก้ไขได้เฉพาะ Super Admin</span>`;
+    } else {
+      if (u.status === "pending") {
+        actions += `<button class="btn btn-success btn-sm" onclick='approveUser(${uname})'>✅ อนุมัติ</button> `;
+        actions += `<button class="btn btn-danger btn-sm" onclick='rejectUser(${uname})'>❌ ปฏิเสธ</button> `;
+      } else if (u.status === "approved") {
+        actions += `<button class="btn btn-danger btn-sm" onclick='rejectUser(${uname})'>🚫 ระงับ</button> `;
+      } else if (u.status === "rejected") {
+        actions += `<button class="btn btn-success btn-sm" onclick='approveUser(${uname})'>✅ อนุมัติ</button> `;
+      }
+      // ปุ่มสลับสิทธิ์ admin/user (และ superadmin ถ้าผู้ใช้ปัจจุบันเป็น superadmin)
+      if (u.role === "admin" || u.role === "superadmin") {
+        actions += `<button class="btn btn-outline btn-sm" onclick='setRole(${uname}, "user")'>ลดเป็น User</button>`;
+      } else {
+        actions += `<button class="btn btn-outline btn-sm" onclick='setRole(${uname}, "admin")'>ตั้งเป็น Admin</button>`;
+      }
+      if (authRole === "superadmin" && u.role !== "superadmin") {
+        actions += ` <button class="btn btn-warning btn-sm" onclick='setRole(${uname}, "superadmin")'>👑 ตั้งเป็น Super Admin</button>`;
+      }
+    }
+
+    const roleBadge = u.role === "superadmin"
+      ? '<span class="badge" style="background:#fefcbf;color:#744210">👑 Super Admin</span>'
+      : u.role === "admin"
+      ? '<span class="badge badge-blue">Admin</span>'
+      : '<span class="badge badge-gray">User</span>';
+
+    return `<tr>
+      <td>${u.displayName || "-"}</td>
+      <td>${u.username}</td>
+      <td>${roleBadge}</td>
+      <td>${statusBadge(u.status)}</td>
+      <td style="white-space:nowrap">${actions}</td>
+    </tr>`;
+  }).join("");
+}
+
+async function userAction(action, username, extra) {
+  try {
+    const payload = Object.assign({ action, token: authToken, username }, extra || {});
+    const res = await fetch(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (!json.success) {
+      if (handleAuthExpired(json)) return;
+      throw new Error(json.message);
+    }
+    showToast(json.message, "success");
+    loadUsers();
+  } catch (e) {
+    showToast("ดำเนินการไม่สำเร็จ: " + e.message, "error");
+  }
+}
+
+function approveUser(username) { userAction("approveUser", username); }
+function rejectUser(username) {
+  if (!confirm(`ยืนยันการปฏิเสธ/ระงับผู้ใช้ "${username}"?`)) return;
+  userAction("rejectUser", username);
+}
+function setRole(username, role) {
+  const label = role === "superadmin" ? "ตั้งเป็น Super Admin (สิทธิ์สูงสุด)" : role === "admin" ? "ตั้งเป็น Admin (โยกย้ายข้อมูลได้)" : "ลดเป็น User ธรรมดา";
+  if (!confirm(`ยืนยัน${label} สำหรับ "${username}"?`)) return;
+  userAction("setUserRole", username, { role });
+}
+
+// ====================================================
+// ประวัติการแก้ไข (Admin เท่านั้น)
+// ====================================================
+function openLogsModal() {
+  document.getElementById("logsModalOverlay").classList.add("active");
+  loadLogs();
+}
+function closeLogsModal() {
+  document.getElementById("logsModalOverlay").classList.remove("active");
+}
+
+function formatLogTime(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString("th-TH", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  } catch (e) { return iso; }
+}
+
+async function loadLogs() {
+  const tbody = document.getElementById("logsTableBody");
+  const loading = document.getElementById("logsLoading");
+  loading.style.display = "block";
+  tbody.innerHTML = "";
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getLogs&token=${encodeURIComponent(authToken)}`);
+    const json = await res.json();
+    if (!json.success) {
+      if (handleAuthExpired(json)) return;
+      throw new Error(json.message);
+    }
+    renderLogs(json.logs || []);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#fc8181;padding:24px">โหลดไม่ได้: ${e.message}</td></tr>`;
+  } finally {
+    loading.style.display = "none";
+  }
+}
+
+function renderLogs(logs) {
+  const tbody = document.getElementById("logsTableBody");
+  if (logs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#a0aec0;padding:24px">ยังไม่มีประวัติการแก้ไข</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = logs.map(l => `
+    <tr>
+      <td style="white-space:nowrap">${formatLogTime(l.timestamp)}</td>
+      <td>${l.username || "-"}</td>
+      <td>${l.action || "-"}</td>
+      <td>${l.district || "-"}</td>
+      <td>${l.details || "-"}</td>
+    </tr>`).join("");
+}
+
+// ขั้นที่ 1: สรุปสิ่งที่จะเปลี่ยนแล้วให้ตรวจสอบก่อน
+function moveStep1() {
+  const targetDistrict = document.getElementById("moveTargetDistrict").value;
+  const targetUnit = document.getElementById("moveTargetUnit").value.trim();
+  const targetCare = document.getElementById("moveTargetCare").value.trim();
+  const name = document.getElementById("moveMemberName").value;
+
+  const changes = [];
+  if (targetDistrict !== currentSheet) {
+    changes.push(`• ย้ายอำเภอ: ${currentSheet.replace("DATA ", "")} → <b>${targetDistrict.replace("DATA ", "")}</b>`);
+  }
+  if (targetUnit) changes.push(`• เปลี่ยนหน่วยเป็น: <b>${targetUnit}</b>`);
+  if (targetCare) changes.push(`• เปลี่ยนแคร์เป็น: <b>${targetCare}</b>`);
+
+  if (changes.length === 0) {
+    showToast("กรุณาเลือกอย่างน้อย 1 อย่างที่จะเปลี่ยน (อำเภอ/หน่วย/แคร์)", "error");
+    return;
+  }
+
+  document.getElementById("moveConfirmText").innerHTML =
+    `จะดำเนินการกับ "<b>${name}</b>":<br>${changes.join("<br>")}<br><br>ยืนยันการโยกย้ายใช่ไหม?`;
+  document.getElementById("moveConfirmBox").style.display = "block";
+  document.getElementById("moveStep1Btn").style.display = "none";
+  document.getElementById("moveStep2Btn").style.display = "inline-flex";
+}
+
+// ขั้นที่ 2: ยิงคำสั่งจริง
+async function moveStep2() {
+  const id = document.getElementById("moveMemberId").value;
+  const targetDistrict = document.getElementById("moveTargetDistrict").value;
+  const targetUnit = document.getElementById("moveTargetUnit").value.trim();
+  const targetCare = document.getElementById("moveTargetCare").value.trim();
+
+  const payload = { action: "moveMember", sheet: currentSheet, token: authToken, id, targetDistrict };
+  if (targetUnit) payload.targetUnit = targetUnit;
+  if (targetCare) payload.targetCare = targetCare;
+
+  const btn = document.getElementById("moveStep2Btn");
+  btn.disabled = true; btn.textContent = "⏳ กำลังโยกย้าย...";
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (!json.success) {
+      if (handleAuthExpired(json)) return;
+      throw new Error(json.message);
+    }
+    showToast(json.message, "success");
+    closeMoveModal();
+    // สลับแท็บไปยังอำเภอปลายทางอัตโนมัติ
+    const matchedSheet = DISTRICTS.find(d => d.includes(targetDistrict));
+    if (matchedSheet && matchedSheet !== currentSheet) {
+      currentSheet = matchedSheet;
+      renderDistrictTabs();
+    }
+    loadData();
+  } catch (e) {
+    showToast("โยกย้ายไม่สำเร็จ: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "✅ ยืนยันโยกย้าย";
+  }
+}
+
+async function deleteMemberById(id) {
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "delete", sheet: currentSheet, token: authToken, id }) });
+    const json = await res.json();
+    if (!json.success) {
+      if (handleAuthExpired(json)) return;
+      throw new Error(json.message);
+    }
+    showToast("ลบรายการสำเร็จ ✅", "success");
+    loadData();
+  } catch(e) {
+    showToast("ลบไม่ได้: " + e.message, "error");
+  }
+}
+
+// ====================================================
+// IMPORT
+// ====================================================
+function openImportModal() {
+  document.getElementById("importModalOverlay").classList.add("active");
+  document.getElementById("importDistrictLabel").textContent = `(${currentSheet})`;
+  switchImportTab("paste");
+}
+function closeImportModal() {
+  document.getElementById("importModalOverlay").classList.remove("active");
+  document.getElementById("previewArea").style.display = "none";
+  document.getElementById("confirmImportBtn").style.display = "none";
+  document.getElementById("pasteArea").value = "";
+  document.getElementById("sheetImportProgress").style.display = "none";
+  document.getElementById("startImportSheetBtn").disabled = false;
+  pendingImportRows = [];
+}
+function switchImportTab(tab) {
+  document.getElementById("tabPaste").style.display = tab === "paste" ? "block" : "none";
+  document.getElementById("tabSheet").style.display = tab === "sheet" ? "block" : "none";
+  document.getElementById("tabPasteBtn").classList.toggle("active", tab === "paste");
+  document.getElementById("tabSheetBtn").classList.toggle("active", tab === "sheet");
+  document.getElementById("previewArea").style.display = "none";
+  document.getElementById("confirmImportBtn").style.display = "none";
+}
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l !== "");
+  if (lines.length < 2) return [];
+  const delim = lines[0].includes("\t") ? "\t" : ",";
+  const headers = lines[0].split(delim).map(h => h.trim().toLowerCase());
+  const fieldKeys = headers.map(h => HEADER_MAP[h] || null);
+
+  return lines.slice(1).map(line => {
+    const cells = line.split(delim);
+    const row = {};
+    fieldKeys.forEach((key, i) => { if (key) row[key] = (cells[i] || "").trim(); });
+    return row;
+  });
+}
+
+function buildExistingIndex() {
+  const idx = {};
+  allMembers.forEach(m => { idx[(String(m.firstName || "").trim() + "|" + String(m.lastName || "").trim()).toLowerCase()] = true; });
+  return idx;
+}
+
+// ตรวจสอบว่าแถวมีข้อมูลตัวตน (ชื่อ/นามสกุล/ชื่อเล่น) อย่างน้อย 1 ใน 3 ช่อง
+function hasIdentity(r) {
+  const hasFirst = String(r.firstName || "").trim() !== "";
+  const hasLast = String(r.lastName || "").trim() !== "";
+  const hasNick = String(r.nickname || "").trim() !== "";
+  const valid = hasFirst || hasLast || hasNick;
+  if (!valid) {
+    console.log("[hasIdentity] ❌ ข้ามแถวนี้:", r);
+  } else {
+    // console.log("[hasIdentity] ✅ ผ่าน:", r.firstName, r.lastName, r.nickname);
+  }
+  return valid;
+}
+
+function previewPaste() {
+  const text = document.getElementById("pasteArea").value;
+  const parsed = parseCSV(text);
+  const rawRows = parsed.filter(r => Object.values(r).some(v => String(v || "").trim() !== ""));
+  const skippedCount = rawRows.filter(r => !hasIdentity(r)).length;
+  const rows = rawRows.filter(hasIdentity);
+  if (rows.length === 0) {
+    showToast("ไม่พบข้อมูลที่ใช้ได้ ตรวจสอบหัวคอลัมน์และรูปแบบข้อมูล", "error");
+    return;
+  }
+  if (skippedCount > 0) showToast(`ตัดแถวที่ไม่มีชื่อ/นามสกุล/ชื่อเล่น ${skippedCount} แถวออกแล้ว`, "info");
+  pendingImportRows = rows;
+  renderPreview(rows);
+}
+
+function renderPreview(rows) {
+  const existingIdx = buildExistingIndex();
+  let newCount = 0, updateCount = 0;
+
+  const body = rows.map(r => {
+    const fn = (r.firstName || "").trim();
+    const ln = (r.lastName || "").trim();
+    const key = (fn + "|" + ln).toLowerCase();
+    const isUpdate = (fn || ln) && !!existingIdx[key];
+    if (isUpdate) updateCount++; else newCount++;
+    return `<tr>
+      <td>${isUpdate ? '<span class="badge badge-update">อัปเดต</span>' : '<span class="badge badge-new">ใหม่</span>'}</td>
+      <td>${r.firstName || "-"}</td>
+      <td>${r.lastName || "-"}</td>
+      <td>${r.nickname || "-"}</td>
+      <td>${r.unit || "-"}</td>
+      <td>${r.phone || "-"}</td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("previewBody").innerHTML = body;
+  document.getElementById("previewNewCount").textContent = `🆕 เพิ่มใหม่ ${newCount}`;
+  document.getElementById("previewUpdateCount").textContent = `♻️ อัปเดต ${updateCount}`;
+  document.getElementById("previewSkipCount").textContent = `รวม ${rows.length} แถว`;
+  document.getElementById("previewArea").style.display = "block";
+  document.getElementById("confirmImportBtn").style.display = "inline-flex";
+}
+
+async function confirmImport() {
+  if (pendingImportRows.length === 0) return;
+  const btn = document.getElementById("confirmImportBtn");
+  btn.disabled = true; btn.textContent = "⏳ กำลังนำเข้า...";
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "importRows", sheet: currentSheet, token: authToken, rows: pendingImportRows })
+    });
+    const json = await res.json();
+    if (!json.success) {
+      if (handleAuthExpired(json)) return;
+      throw new Error(json.message);
+    }
+    showToast(json.message, "success");
+    closeImportModal();
+    loadData();
+  } catch(e) {
+    showToast("นำเข้าไม่สำเร็จ: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "✅ ยืนยันนำเข้า";
+  }
+}
+
+async function importFromExternalSheet() {
+  const sourceUrl = document.getElementById("sourceSheetUrl").value.trim();
+  const sourceSheetName = document.getElementById("sourceSheetName").value.trim();
+  if (!sourceUrl) { showToast("กรุณาใส่ลิงก์ Google Sheet ต้นทาง", "error"); return; }
+
+  const btn = document.getElementById("startImportSheetBtn");
+  const progressWrap = document.getElementById("sheetImportProgress");
+  const progressLabel = document.getElementById("progressLabel");
+  const progressCount = document.getElementById("progressCount");
+  const progressBar = document.getElementById("progressBar");
+  const liveAdded = document.getElementById("liveAddedCount");
+  const liveUpdated = document.getElementById("liveUpdatedCount");
+
+  btn.disabled = true;
+  progressWrap.style.display = "block";
+  progressLabel.textContent = "กำลังอ่านข้อมูลจากชีทต้นทาง...";
+  progressCount.textContent = "";
+  progressBar.style.width = "0%";
+  liveAdded.textContent = "🆕 เพิ่มใหม่ 0";
+  liveUpdated.textContent = "♻️ อัปเดต(ซ้ำ) 0";
+
+  try {
+    // ขั้นที่ 1: ดึงข้อมูลทั้งหมดจากชีทต้นทางมาก่อน (ยังไม่นำเข้า)
+    console.log("[import] ขั้นที่ 1: fetchSheetRows", { sourceUrl, sourceSheetName });
+    const fetchRes = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "fetchSheetRows", token: authToken, sourceUrl, sourceSheetName })
+    });
+    const fetchJson = await fetchRes.json();
+    console.log("[import] ผลลัพธ์ fetchSheetRows:", JSON.stringify(fetchJson).substring(0, 500));
+    if (!fetchJson.success) {
+      if (handleAuthExpired(fetchJson)) return;
+      throw new Error(fetchJson.message);
+    }
+
+    const allRows = fetchJson.rows || [];
+    console.log("[import] จำนวนแถวที่ดึงมาได้:", allRows.length, "แถวตัวอย่าง:", JSON.stringify(allRows[0]));
+
+    // กรองแถวที่ไม่มีชื่อ/นามสกุล/ชื่อเล่น แม้แต่ 1 ใน 3 ออกก่อนนำเข้า
+    const skipped = allRows.filter(r => !hasIdentity(r)).length;
+    const rows = allRows.filter(hasIdentity);
+    if (skipped > 0) console.log(`[import] ตัดแถวที่ไม่มีชื่อ/นามสกุล/ชื่อเล่น ${skipped} แถวออก`);
+    if (rows.length === 0) throw new Error("ไม่พบข้อมูลที่มีชื่อ/นามสกุล/ชื่อเล่น ในชีทต้นทาง");
+
+    // ขั้นที่ 2: นำเข้าเป็นชุดๆ (chunk) เพื่ออัปเดตความคืบหน้าแบบเรียลไทม์
+    const CHUNK_SIZE = 25;
+    let doneCount = 0, totalAdded = 0, totalUpdated = 0, totalSkipped = 0;
+    const allDuplicates = [];
+
+    progressCount.textContent = `0 / ${rows.length}`;
+    progressLabel.textContent = `กำลังนำเข้าข้อมูล... (ตัดออก ${skipped} แถวที่ไม่มีชื่อ)`;
+
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + CHUNK_SIZE);
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "importRows", sheet: currentSheet, token: authToken, rows: chunk })
+      });
+      const json = await res.json();
+      if (!json.success) {
+        if (handleAuthExpired(json)) return;
+        throw new Error(json.message);
+      }
+
+      doneCount += chunk.length;
+      totalAdded += json.added || 0;
+      totalUpdated += json.updated || 0;
+      totalSkipped += json.skipped || 0;
+      if (json.duplicates) allDuplicates.push(...json.duplicates);
+
+      const pct = Math.round((doneCount / rows.length) * 100);
+      progressBar.style.width = pct + "%";
+      progressCount.textContent = `${doneCount} / ${rows.length}`;
+      liveAdded.textContent = `🆕 เพิ่มใหม่ ${totalAdded}`;
+      liveUpdated.textContent = `♻️ อัปเดต(ซ้ำ) ${totalUpdated}`;
+    }
+
+    progressLabel.textContent = "✅ นำเข้าเสร็จสมบูรณ์";
+    let summary = `นำเข้าสำเร็จ ${rows.length} รายการ: เพิ่มใหม่ ${totalAdded}, อัปเดต(ซ้ำ) ${totalUpdated}` + (skipped > 0 ? `, ข้ามแถวไม่มีชื่อ ${skipped} แถว` : "");
+    if (allDuplicates.length > 0) {
+      const shown = allDuplicates.slice(0, 15).join(", ");
+      const more = allDuplicates.length > 15 ? ` และอีก ${allDuplicates.length - 15} คน` : "";
+      summary += `\n⚠️ พบชื่อซ้ำกับข้อมูลเดิม (ถูกอัปเดตทับ): ${shown}${more}`;
+    }
+    showToast(summary, "success");
+    closeImportModal();
+    loadData();
+  } catch (e) {
+    progressLabel.textContent = "❌ นำเข้าไม่สำเร็จ: " + e.message;
+    showToast("นำเข้าไม่สำเร็จ: " + e.message, "error");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ====================================================
+// Top scrollbar sync (mirrors the table's horizontal scroll)
+// ====================================================
+function setupTopScrollSync() {
+  const topScroll = document.getElementById("topScroll");
+  const tableWrap = document.getElementById("tableWrap");
+  const topInner  = document.getElementById("topScrollInner");
+  if (!topScroll || !tableWrap || topScroll.dataset.bound) return;
+
+  function syncWidth() {
+    const table = tableWrap.querySelector("table");
+    if (table) topInner.style.width = table.scrollWidth + "px";
+  }
+  syncWidth();
+  new ResizeObserver(syncWidth).observe(tableWrap);
+
+  let syncing = false;
+  topScroll.addEventListener("scroll", () => {
+    if (syncing) return;
+    syncing = true;
+    tableWrap.scrollLeft = topScroll.scrollLeft;
+    syncing = false;
+  });
+  tableWrap.addEventListener("scroll", () => {
+    if (syncing) return;
+    syncing = true;
+    topScroll.scrollLeft = tableWrap.scrollLeft;
+    syncing = false;
+  });
+  topScroll.dataset.bound = "1";
+}
+
+// ====================================================
+// Toast
+// ====================================================
+function showToast(msg, type = "") {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  const duration = Math.min(3500 + msg.length * 30, 12000); // ข้อความยาว (เช่น รายชื่อซ้ำ) จะแสดงนานขึ้น
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => t.classList.remove("show"), duration);
+}
+function showError(msg) { showToast(msg, "error"); }
+
+// ====================================================
+// ล้างตัวกรอง
+// ====================================================
+function clearFilters() {
+  document.getElementById("searchInput").value = "";
+  document.getElementById("filterStatus").value = "";
+  document.getElementById("filterUnit").value = "";
+  document.getElementById("filterCare").value = "";
+  applyFilters();
+}
+
+// ====================================================
+// วันเกิดสมาชิก — แสดงล่วงหน้า 7 วัน
+// ====================================================
+const THAI_MONTH_NAMES = ["","มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
+  "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+
+async function loadBirthdays() {
+  try {
+    console.log("[loadBirthdays] กำลังเรียก API...");
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getBirthdays&token=${encodeURIComponent(authToken)}`);
+    const json = await res.json();
+    console.log("[loadBirthdays] ผลลัพธ์:", JSON.stringify(json).slice(0, 300));
+
+    if (!json.success || !json.birthdays || json.birthdays.length === 0) {
+      console.log("[loadBirthdays] ไม่มีวันเกิดในช่วง 7 วัน หรือ API error:", json.message || "ไม่มีข้อมูล");
+      document.getElementById("birthdayCard").style.display = "none";
+      return;
+    }
+
+    const list = json.birthdays.map(b => {
+      const monthName = THAI_MONTH_NAMES[b.birthMonth] || b.birthMonth;
+      const icon = b.daysUntil === 0 ? "🎂" : "🎁";
+      const labelColor = b.daysUntil === 0 ? "color:#e53e3e;font-weight:700" : b.daysUntil <= 2 ? "color:#dd6b20;font-weight:600" : "color:#718096";
+      return `<div style="padding:12px 0;border-bottom:1px solid #f0f4f8;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:1.2rem">${icon}</span>
+        <b style="font-size:1.1rem;color:#1a202c">${b.name}</b>${b.nickname ? ` <span class="badge badge-blue" style="font-size:0.9rem;padding:4px 8px;">${b.nickname}</span>` : ""}
+        <span style="color:#718096;font-size:0.95rem;width:100%">${b.birthDay} ${monthName} · ${b.district} · ${b.unit || "-"}</span>
+        <span style="${labelColor};font-size:1rem;margin-top:-28px;margin-left:auto;background:#fffaf0;padding:2px 8px;border-radius:12px">${b.label}</span>
+      </div>`;
+    }).join("");
+
+    document.getElementById("birthdayList").innerHTML = list;
+    document.getElementById("birthdayCard").style.display = "block";
+    
+    // แสดวงเป็น Pop-up ชัดเจนตอนโหลดครั้งแรกด้วย
+    document.getElementById("birthdayModalList").innerHTML = list;
+    document.getElementById("birthdayModalOverlay").classList.add("active");
+  } catch (e) {
+    console.log("[loadBirthdays] ERROR:", e.message || e);
+    document.getElementById("birthdayCard").style.display = "none";
+  }
+}
+
+function closeBirthdayModal() {
+  document.getElementById("birthdayModalOverlay").classList.remove("active");
+}
+
+function toggleBirthdayCard() {
+  const list = document.getElementById("birthdayList");
+  const icon = document.getElementById("birthdayToggleIcon");
+  if (list.style.display === "none") {
+    list.style.display = "block";
+    icon.innerHTML = "▼";
+  } else {
+    list.style.display = "none";
+    icon.innerHTML = "▶";
+  }
+}
+
+// ====================================================
+// เปลี่ยนรหัสผ่าน
+// ====================================================
+function openChangePasswordModal() {
+  document.getElementById("cpOldPassword").value = "";
+  document.getElementById("cpNewPassword").value = "";
+  document.getElementById("cpConfirmPassword").value = "";
+  document.getElementById("cpMsg").textContent = "";
+  document.getElementById("changePwModalOverlay").classList.add("active");
+}
+function closeChangePasswordModal() {
+  document.getElementById("changePwModalOverlay").classList.remove("active");
+}
+
+async function doChangePassword() {
+  const oldPw = document.getElementById("cpOldPassword").value.trim();
+  const newPw = document.getElementById("cpNewPassword").value.trim();
+  const confirmPw = document.getElementById("cpConfirmPassword").value.trim();
+  const msgEl = document.getElementById("cpMsg");
+  const btn = document.getElementById("cpSubmitBtn");
+  msgEl.style.color = "#e53e3e";
+  msgEl.textContent = "";
+
+  if (!oldPw || !newPw) { msgEl.textContent = "กรุณากรอกรหัสผ่านเดิมและใหม่"; return; }
+  if (newPw !== confirmPw) { msgEl.textContent = "รหัสผ่านใหม่ไม่ตรงกัน"; return; }
+  if (newPw.length < 4) { msgEl.textContent = "รหัสผ่านใหม่ต้องยาวอย่างน้อย 4 ตัวอักษร"; return; }
+
+  btn.disabled = true; btn.textContent = "กำลังเปลี่ยน...";
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "changePassword", token: authToken, oldPassword: oldPw, newPassword: newPw })
+    });
+    const json = await res.json();
+    if (!json.success) {
+      if (handleAuthExpired(json)) return;
+      throw new Error(json.message);
+    }
+    msgEl.style.color = "#38a169";
+    msgEl.textContent = "✅ " + json.message;
+    showToast("เปลี่ยนรหัสผ่านสำเร็จ ✅", "success");
+    setTimeout(closeChangePasswordModal, 1500);
+  } catch (e) {
+    msgEl.style.color = "#e53e3e";
+    msgEl.textContent = e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "เปลี่ยนรหัสผ่าน";
+  }
+}
+
+// ====================================================
+// แจ้งเตือน Admin เมื่อมีคนสมัครใหม่รออนุมัติ (badge บนปุ่มจัดการผู้ใช้)
+// ====================================================
+async function checkPendingUsers() {
+  if (authRole !== "admin" && authRole !== "superadmin") return;
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getPendingCount&token=${encodeURIComponent(authToken)}`);
+    const json = await res.json();
+    if (json.success && json.count > 0) {
+      document.getElementById("manageUsersBtn").innerHTML = `👥 จัดการผู้ใช้ <span style="background:#fc8181;color:white;border-radius:999px;padding:1px 7px;font-size:0.72rem;margin-left:4px">${json.count}</span>`;
+    }
+  } catch (e) { /* ไม่ต้องทำอะไร ถ้าเช็คไม่ได้ */ }
+}
+
+// ====================================================
+// Event Listeners
+// ====================================================
+document.getElementById("searchInput").addEventListener("input", applyFilters);
+document.getElementById("filterStatus").addEventListener("change", applyFilters);
+document.getElementById("filterUnit").addEventListener("change", applyFilters);
+document.getElementById("filterCare").addEventListener("change", applyFilters);
+// ปิดฟังก์ชันคลิกพื้นหลังแล้วปิดหน้าต่าง เพื่อป้องกันเมาส์หลุดไปโดนแล้วข้อมูลหาย
+// document.getElementById("modalOverlay").addEventListener("click", e => { if (e.target === e.currentTarget) closeModal(); });
+// document.getElementById("importModalOverlay").addEventListener("click", e => { if (e.target === e.currentTarget) closeImportModal(); });
+// document.getElementById("moveModalOverlay").addEventListener("click", e => { if (e.target === e.currentTarget) closeMoveModal(); });
+// document.getElementById("movePickerOverlay").addEventListener("click", e => { if (e.target === e.currentTarget) closeMovePicker(); });
+// document.getElementById("editPickerOverlay").addEventListener("click", e => { if (e.target === e.currentTarget) closeEditPicker(); });
+// document.getElementById("usersModalOverlay").addEventListener("click", e => { if (e.target === e.currentTarget) closeUsersModal(); });
+// document.getElementById("logsModalOverlay").addEventListener("click", e => { if (e.target === e.currentTarget) closeLogsModal(); });
+// document.getElementById("changePwModalOverlay").addEventListener("click", e => { if (e.target === e.currentTarget) closeChangePasswordModal(); });
+
+function initDateDropdowns() {
+  let dHtml = '<option value="">-- วัน --</option>';
+  for (let i = 1; i <= 31; i++) dHtml += `<option value="${i}">${i}</option>`;
+  document.getElementById("f_birthDay").innerHTML = dHtml;
+
+  let yHtml = '<option value="">-- ปี (พ.ศ.) --</option>';
+  const currentYear = new Date().getFullYear() + 543;
+  for (let i = currentYear; i >= currentYear - 100; i--) yHtml += `<option value="${i}">${i}</option>`;
+  document.getElementById("f_birthYear").innerHTML = yHtml;
+}
+
+// ====================================================
+// Init
+// ====================================================
+function startApp() {
+  initDateDropdowns();
+  renderDistrictTabs();
+  loadData();
+  checkPendingUsers(); // เช็คจำนวนผู้ใช้รออนุมัติ แสดง badge ให้ Admin
+  loadBirthdays(); // แสดงวันเกิดสมาชิกที่กำลังจะถึง
+  loadDashboardData(); // โหลดกราฟสถิติ
+}
+
+
+// ====================================================
+// Dashboard Analytics
+// ====================================================
+let dashboardLoaded = false;
+async function loadDashboardData() {
+  if (dashboardLoaded) return;
+  try {
+    let allData = [];
+    for (let sheet of DISTRICTS) {
+      try {
+        const r = await fetch(`${APPS_SCRIPT_URL}?action=getAll&sheet=${encodeURIComponent(sheet)}&token=${encodeURIComponent(authToken)}`);
+        const res = await r.json();
+        if (res.success && res.data) {
+          allData = allData.concat(res.data);
+        }
+      } catch (err) {
+        console.error('Error fetching sheet', sheet, err);
+      }
+    }
+    
+    // Aggregate Data
+    const districtCount = {};
+    const statusCount = {};
+    const careCount = {};
+    const unitCount = {};
+
+    allData.forEach(m => {
+      if (!m) return;
+      // District
+      const dist = String(m.district || "ไม่ระบุ").trim();
+      districtCount[dist] = (districtCount[dist] || 0) + 1;
+      
+      // Status
+      const st = String(m.spiritualStatus || "ไม่ระบุ").trim();
+      statusCount[st] = (statusCount[st] || 0) + 1;
+      
+      // Care
+      const care = String(m.care || "ไม่ระบุ").trim();
+      careCount[care] = (careCount[care] || 0) + 1;
+      
+      // Unit
+      const unit = String(m.unit || "ไม่ระบุ").trim();
+      unitCount[unit] = (unitCount[unit] || 0) + 1;
+    });
+
+    document.getElementById("dashboardLoading").style.display = "none";
+    document.getElementById("dashboardContent").style.display = "block";
+
+    if (typeof Chart === 'undefined') {
+      throw new Error("Chart.js library is not loaded. Please check your internet connection or adblocker.");
+    }
+
+    // Chart.js Default Font
+    Chart.defaults.font.family = "'Sarabun', 'Noto Sans Thai', sans-serif";
+
+    // Color Palette Premium
+    const colorPalette = [
+      '#667eea', '#ed64a6', '#48bb78', '#ecc94b', '#a0aec0',
+      '#f56565', '#4fd1c5', '#9f7aea', '#ed8936', '#38b2ac',
+      '#fc8181', '#f6ad55', '#63b3ed', '#f687b3', '#76e4f7'
+    ];
+
+    // 1. District Chart (Pie/Doughnut)
+    new Chart(document.getElementById('districtChart'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(districtCount),
+        datasets: [{
+          data: Object.values(districtCount),
+          backgroundColor: colorPalette,
+          borderWidth: 2,
+          borderColor: '#ffffff',
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        animation: { duration: 1000, easing: 'easeOutQuart' },
+        plugins: { 
+          title: { display: true, text: 'สัดส่วนสมาชิกแต่ละอำเภอ', font: {size: 16} },
+          legend: { position: 'right' },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                let val = context.raw || 0;
+                let total = context.dataset.data.reduce((a,b)=>a+b,0);
+                let pct = Math.round((val/total)*100);
+                return `${label}: ${val} คน (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // 3. Care Chart (Bar)
+    const filteredCare = Object.entries(careCount)
+      .filter(([k,v]) => k !== "ไม่ระบุ" && k !== "")
+      .sort((a,b) => b[1] - a[1])
+      .slice(0, 5);
+    new Chart(document.getElementById('careChart'), {
+      type: 'bar',
+      data: {
+        labels: filteredCare.map(x => x[0]),
+        datasets: [{
+          label: 'จำนวนคน',
+          data: filteredCare.map(x => x[1]),
+          backgroundColor: filteredCare.map((_, i) => colorPalette[(i+3) % colorPalette.length]),
+          borderRadius: 6
+        }]
+      },
+      options: { 
+        indexAxis: 'y',
+        animation: { duration: 1400, easing: 'easeOutQuart' },
+        scales: { x: { grid: { borderDash: [5,5], color: '#e2e8f0' } }, y: { grid: { display: false } } },
+        plugins: { title: { display: true, text: 'Top 5 แคร์ ที่มีสมาชิกเยอะสุด', font: {size: 16} }, legend: {display: false} } 
+      }
+    });
+
+    // 4. Unit Chart (Bar)
+    const filteredUnit = Object.entries(unitCount)
+      .filter(([k,v]) => k !== "ไม่ระบุ" && k !== "")
+      .sort((a,b) => b[1] - a[1])
+      .slice(0, 5);
+    new Chart(document.getElementById('unitChart'), {
+      type: 'bar',
+      data: {
+        labels: filteredUnit.map(x => x[0]),
+        datasets: [{
+          label: 'จำนวนคน',
+          data: filteredUnit.map(x => x[1]),
+          backgroundColor: filteredUnit.map((_, i) => colorPalette[(i+7) % colorPalette.length]),
+          borderRadius: 6
+        }]
+      },
+      options: { 
+        indexAxis: 'y',
+        animation: { duration: 1600, easing: 'easeOutQuart' },
+        scales: { x: { grid: { borderDash: [5,5], color: '#e2e8f0' } }, y: { grid: { display: false } } },
+        plugins: { title: { display: true, text: 'Top 5 หน่วย ที่มีสมาชิกเยอะสุด', font: {size: 16} }, legend: {display: false} } 
+      }
+    });
+
+    dashboardLoaded = true;
+  } catch(e) {
+    console.error("Dashboard error:", e);
+    document.getElementById("dashboardLoading").innerHTML = `<div style="color:red; font-size:14px; text-align:left; padding:10px; border:1px solid red; border-radius:8px;"><b>เกิดข้อผิดพลาด:</b><br>${e.message}</div>`;
+  }
+}
+
+if (authToken) {
+  hideLoginScreen();
+  startApp();
+} else {
+  showLoginScreen();
+}
+</script>
+</body>
+</html>

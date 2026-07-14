@@ -1,0 +1,22 @@
+# Environments
+.env
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Local script files to ignore
+add_dashboard.py
+add_dashboard_github.py
+fix_github_deploy.py
+fix_hover.py
+fix_js.py
+fix_paths.py
+merge.py
+remove_chart.py
+separate_charts.py
+set_top5.py
+upgrade_dashboard.py
+script_0.js
+user_code.txt
